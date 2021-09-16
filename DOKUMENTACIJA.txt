@@ -1,0 +1,269 @@
+ZADATAK: 
+------------------------------------------------------------------------------------------------------------------------
+Design a simple in-memory, single user command line store / shopping cart. The application has two stages:
+Build an inventory store, to store items and their associated sku, quantity, name, and price
+Shopping Cart Builder (Removes items from inventory to build personal cart of items)
+
+First stage has following commands (STDIN):
+ADD - Add item to inventory, INPUT: sku(number) name(string) quantity(number) price(number); e.g. ADD 1 T-Shirt 3 5.99
+END - Closes the adding inventory stage and moves to next stage; INPUT: None
+Second stage has the following commands (STDIN):
+ADD - Adds an item in the current shopping cart;  INPUT: sku(number) quantity(number); e.g. ADD 1 1
+REMOVE - Removes an item from the shopping cart; INPUT: sku(number) quantity(number); e.g. REMOVE 1 1
+CHECKOUT - Print all items (every line consist of a single item, quantity, and price) and the last line will print total price. It also clears the shopping cart items INPUT: None
+END - Closes the stage and exits the program; INPUT: None
+
+Please note:
+You can run the command ADD/REMOVE as many times as you want, and in any order after building out the INVENTORY stage.
+String contains no space (single word)
+Use a language you’re most comfortable with
+Write production quality code
+Please comment your decisions
+Unit testing is desireable
+
+Example:
+Program STDIN:
+ADD 1 T-Shirt 5 5.99
+ADD 2 Badge 10 0.99
+END
+ADD 1 1
+ADD 2 3
+CHECKOUT
+ADD 1 1
+CHECKOUT
+END
+Program STDOUT:
+T-shirt 1 x 5.99 = 5.99
+Badge 3 x 0.99 = 2.97        
+TOTAL = 8.96
+T-shirt 1 x 5.99 = 5.99
+TOTAL = 5.99
+----------------------------------------------------------------------------------------------------------------
+
+
+
+UPUSTVA ZA KORIŠTENJE PROGRAMA: 
+
+1. U konzoli treba dohvatiti "online-store" dokument.
+3. Upisati "npm install" kako bi instalirali potreban library.
+2. Pomoću komande "node zadatak" se pokrene program.
+
+FUNKCIJA: 
+	- PROIZVOD -
+1. Pritiskom na "ENTER" se pokreće aplikacija te se unose podatci o proizvodu koji se sprema u trgovinu!
+2. Upisom "END" se nastavlja na sljedeći dio programa, tj. košaricu.
+
+	- KOŠARICA -
+1.Pritiskom na "ENTER" vam se prikazuju dostupni proizvodi te imate unos "SKU" i "QUANTITY" s kojim birate koji i koliko proizvoda
+želite dodati u košaricu.
+Ponovnim pritiskom "ENTER" možete ponoviti radnju.
+2.Upisom "CHECKOUT" ćete ispisati račun te obrisati se proizvode u košarici! Ukoliko nakon CHECKOUT-a pritisnete "ENTER",
+možete stvoriti opet novu košaricu.
+3.Upisom "END" ćete vidjeti sve račune!
+4.Upisom "REMOVE" otvarate novi prozor "REMOVE".
+
+	-REMOVE-
+1.Pritiskom na "ENTER" ćete otvoriti sve proizvode koji vam se nalaze u košarici te ih pomoću SKU unosa možete brisati.
+2.Upisom "CART" se vračate na košaricu!
+
+	-END-
+1.Ukoliko na prozoru KOŠARICE uspišete "END" otvarate novi prozor gdje možete vidjeti sve svoje račune!
+2.Upisom "BACK" se vračate na košaricu!
+
+-------------------------------------------------------------------------------------------------------------------
+
+
+
+KOD :
+-------------------------------------------------------------------------------------------------------------------
+const readline = require("readline");
+
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+
+
+/////////////////////////////////////
+// Varijable za sve
+
+let proizvodi = [];
+let cartItems = [];
+let racun = [];
+let poljeRacuna = [];
+let zbroj = 0;
+////////////////////////////////
+
+
+/**************PROIZVODI******************/
+
+function add() {
+  console.clear();
+  console.log("PROIZVODI");
+  console.log("_________________________________________________________________________________");
+  rl.question("Dodavanje novog proizvoda ----> ENTER \nPrelazak na košaricu      ----> 'END'\n --> ", odgovor => {
+    if (odgovor === "END") {
+      console.clear();
+      cart();
+    } else {
+      console.log("_________________________________________________________________________________");
+      rl.question('SKU: ', (sku) => {
+        console.log("_________________________________________________________________________________");
+        rl.question("NAME: ", (name) => {
+          console.log("__________________________________________________________________________________");
+          rl.question("QUANTITY: ", quant => {
+            console.log("_________________________________________________________________________________");
+            rl.question("PRICE: ", price => {
+
+              noviProizvod = {
+                sku: sku,
+                name: name,
+                quant: quant,
+                price: price
+              };
+
+              proizvodi.push(noviProizvod);
+              console.log(proizvodi);
+
+              console.clear();
+
+              add();
+            })
+          })
+        })
+
+      });
+    }
+  })
+
+}
+
+add();
+
+/**********KOŠARICA*************/
+
+function cart() {
+  console.log("KOŠARICA");
+  console.log("_________________________________________________________________________________");
+  rl.question("Prelazak na dodavanje proizvoda u košaricu ----> ENTER\nNapravi račun                              ----> 'CHECKOUT'\nIspis računa                               ----> 'END'\nIzbriši proizvod iz košarice               ----> 'REMOVE' \n --> ", odgovor => {
+    if (odgovor === "END") {
+      console.clear();
+      end();
+    } else if (odgovor === "CHECKOUT") {
+
+      checkout();
+      console.clear();
+      console.log("Uspješno dodani proizvod u košaricu!");
+      cart();
+
+    } else if (odgovor === 'REMOVE'){
+      console.clear();
+      remove();
+    } else {
+      rl.question("SKU: ", sku => {
+
+        rl.question("QUANTITY: ", quant => {
+
+          const noviCartItem = {
+            sku: sku,
+            quant: quant
+          }
+          cartItems.push(noviCartItem);
+
+
+          proizvodi.forEach(proizvod => {
+            if (proizvod.sku === noviCartItem.sku) {
+
+              let noviRacun = {
+                name: proizvod.name,
+                quant: noviCartItem.quant,
+                price: proizvod.price,
+                total: proizvod.price * noviCartItem.quant,
+                totalZbroj: zbroj + (proizvod.price * noviCartItem.quant)
+              }
+              zbroj = zbroj + (proizvod.price * noviCartItem.quant);
+              racun.push(noviRacun);
+
+              console.clear();
+            }
+          });
+
+          cart();
+        })
+
+      })
+    }
+  })
+
+}
+
+/*******CHECKOUT******/
+
+function checkout() {
+  poljeRacuna.push(racun);
+
+  racun = [];
+  zbroj = 0;
+}
+
+/****REMOVE****/
+
+function remove() {
+
+  console.log("________________________");
+  rl.question("Vrati se na košaricu ---> 'CART'\nObrisati proizvod      ----> ENTER\n --> ", odgovor => {
+    if(odgovor === "CART"){
+      console.clear();
+      cart();
+    } else {
+      console.log("CARTITEMS: ");
+      console.log(cartItems);
+
+      rl.question("SKU: ", sku =>{
+
+            const removeIndex = cartItems.findIndex( x => x.sku === sku );
+            cartItems.splice( removeIndex, 1 );
+            remove();
+        })
+      }
+
+    remove();
+  })
+  };
+
+
+
+/*******END********/
+function end() {
+
+  console.clear()
+  console.log("RAČUNI: ");
+  console.log("________________________________");
+
+
+  for (x = 0; x < poljeRacuna.length; x++) {
+    var total = 0;
+
+    poljeRacuna[x].forEach(item => {
+      console.log(item.name + " " + item.quant + " x " + item.price + " = " + item.total);
+      total = total + (item.quant * item.price);
+
+    })
+    console.log("TOTAL: " + total);
+      console.log("---------------------------------------");
+  }
+
+  console.log("_________________________________________")
+  rl.question("Za povratak na košaricu upišite 'BACK'\n --> ", odgovor => {
+    if(odgovor === "BACK"){
+      console.clear();
+      cart();
+    }
+  })
+}
+
+------------------------------------------------------------------------------------------------------------
+Napravio : Antun Svetić
+16.09.2021.
